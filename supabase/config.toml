@@ -1,0 +1,28 @@
+# Supabase CLI 配置
+# 用法：supabase link --project-ref <你的 project ref>，然后 supabase functions deploy
+
+project_id = "asdtbwddtbcipoquwgcl"
+
+# 这些函数由扩展 / 分享页用 anon(publishable) key 调用。
+# 新版 Supabase 的 sb_publishable_* key 不是 JWT，故关闭 JWT 校验；
+# 安全性由“不可猜测的短 ID + RLS 锁定 + service_role 访问”保证。
+[functions.create-snapshot]
+verify_jwt = false
+
+[functions.share]
+verify_jwt = false
+
+[functions.get-snapshot]
+verify_jwt = false
+
+[functions.get-status]
+verify_jwt = false
+
+[functions.replay-request]
+verify_jwt = false
+
+[functions.update-status]
+verify_jwt = false
+
+[functions.revoke-snapshot]
+verify_jwt = false

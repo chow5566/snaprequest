@@ -1,0 +1,5 @@
+{
+  "buildCommand": "",
+  "installCommand": "",
+  "rewrites": [{ "source": "/s/:id", "destination": "/snapshot.html?id=:id" }]
+}

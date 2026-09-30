@@ -1,0 +1,14 @@
+node_modules
+.wxt
+.output
+.env
+.env.local
+*.log
+stats.html
+.vercel
+dist
+.idea
+.DS_Store
+supabase/.temp
+
+.vercel

@@ -1,0 +1,38 @@
+{
+  "name": "snaprequest",
+  "description": "前后端联调请求快照与重放工具",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "tsc --noEmit",
+    "share:assets": "node scripts/build-share-assets.mjs",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@rxliuli/vista": "^0.5.3",
+    "@supabase/supabase-js": "^2.117.2",
+    "idb": "^8.0.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/chrome": "^0.3.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@wxt-dev/module-react": "^1.2.2",
+    "supabase": "^2.118.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vercel": "^61.1.0",
+    "wxt": "^0.21.4"
+  },
+  "packageManager": "pnpm@10.26.2"
+}
