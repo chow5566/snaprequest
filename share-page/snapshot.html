@@ -4,10 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>接口报错快照 — SnapRequest</title>
+    <meta name="description" content="SnapRequest 接口报错快照：查看请求详情、一键重放并标记状态。" />
     <link rel="stylesheet" href="styles.css" />
+    <script>
+      // 提前应用主题，避免闪烁
+      try {
+        var t = localStorage.getItem('sr-theme');
+        if (t) document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
   </head>
   <body>
-    <div id="app"><div class="loading">加载中...</div></div>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="/" style="color: inherit">
+          <span class="logo">S</span>
+          <span>SnapRequest <small>接口快照</small></span>
+        </a>
+        <div class="spacer"></div>
+        <button id="theme-btn" class="icon-btn" title="切换主题">🌙 主题</button>
+      </div>
+    </header>
+
+    <main id="app" class="container">
+      <div class="center">
+        <div class="skeleton">
+          <div class="sk big"></div>
+          <div class="sk half"></div>
+          <div class="sk"></div>
+          <div class="sk half"></div>
+        </div>
+      </div>
+    </main>
+
+    <div id="toasts" class="toasts"></div>
+
     <script src="config.js"></script>
     <script type="module" src="snapshot.js"></script>
   </body>
