@@ -3,186 +3,710 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SnapRequest — 前后端联调请求快照与重放工具</title>
+    <title>SnapRequest — 联调报错，别再靠截图</title>
     <meta
       name="description"
-      content="SnapRequest：捕获、分享、重放失败的接口请求，让前后端联调不再靠截图。"
+      content="SnapRequest：自动捕获失败的接口请求，一键生成分享链接，后端用原始认证信息重放并回传结果。开源、免费的 Chrome 扩展。"
     />
+    <link rel="icon" href="share-page/logo.svg" type="image/svg+xml" />
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0b1120;
-        --panel: rgba(255, 255, 255, 0.04);
-        --border: rgba(148, 163, 184, 0.18);
-        --text: #e2e8f0;
-        --muted: #94a3b8;
-        --brand: #3b82f6;
-        --brand-2: #22d3ee;
+        --bg: #1c1c1c;
+        --surface: #202020;
+        --surface-2: #171717;
+        --border: #2e2e2e;
+        --border-strong: #3e3e3e;
+        --text: #ededed;
+        --text-dim: #a0a0a0;
+        --text-faint: #6b6b6b;
+        --accent: #3ecf8e;
+        --accent-hover: #24b47e;
+        --accent-ink: #1c1c1c;
+        --accent-soft: rgba(62, 207, 142, 0.12);
+        --danger: #e5484d;
+        --warn: #ffb224;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
+          Roboto, sans-serif;
       }
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
+      html {
+        scroll-behavior: smooth;
+      }
       body {
-        min-height: 100vh;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-          'Microsoft YaHei', Roboto, sans-serif;
+        font-family: var(--sans);
         color: var(--text);
+        background: var(--bg);
+        background-image: radial-gradient(760px 360px at 50% -10%, rgba(62, 207, 142, 0.13), transparent 70%);
+        background-repeat: no-repeat;
         line-height: 1.65;
-        background:
-          radial-gradient(900px 500px at 15% -10%, rgba(59, 130, 246, 0.22), transparent 60%),
-          radial-gradient(800px 500px at 100% 0%, rgba(34, 211, 238, 0.14), transparent 55%),
-          var(--bg);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 40px 20px;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
       }
       .wrap {
-        width: 100%;
-        max-width: 760px;
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 0 24px;
       }
-      .badge {
+      code {
+        font-family: var(--mono);
+        font-size: 0.9em;
+      }
+
+      /* nav */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        backdrop-filter: blur(10px);
+        background: rgba(28, 28, 28, 0.82);
+        border-bottom: 1px solid var(--border);
+      }
+      .nav-inner {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .brand img {
+        width: 26px;
+        height: 26px;
+        display: block;
+      }
+      .nav-links {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .nav-links a {
+        color: var(--text-dim);
+        font-size: 13.5px;
+        padding: 6px 12px;
+        border-radius: 8px;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+        background: var(--surface);
+      }
+      @media (max-width: 720px) {
+        .nav-links a.opt {
+          display: none;
+        }
+      }
+
+      /* hero */
+      .hero {
+        padding: 88px 0 64px;
+        text-align: center;
+      }
+      .eyebrow {
         display: inline-flex;
         align-items: center;
         gap: 8px;
         font-size: 13px;
-        color: var(--brand-2);
-        background: rgba(34, 211, 238, 0.1);
-        border: 1px solid rgba(34, 211, 238, 0.25);
+        color: var(--accent);
+        background: var(--accent-soft);
+        border: 1px solid rgba(62, 207, 142, 0.28);
         padding: 4px 12px;
         border-radius: 999px;
-        margin-bottom: 20px;
+        margin-bottom: 22px;
       }
       h1 {
-        font-size: clamp(30px, 5vw, 46px);
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-        background: linear-gradient(120deg, #fff 20%, #93c5fd 70%, #67e8f9);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
+        font-size: clamp(34px, 6vw, 60px);
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        font-weight: 700;
       }
-      .lead {
-        margin-top: 14px;
-        font-size: 17px;
-        color: var(--muted);
+      h1 .accent {
+        color: var(--accent);
+      }
+      .sub {
+        margin: 20px auto 0;
         max-width: 620px;
+        font-size: 18px;
+        color: var(--text-dim);
       }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 14px;
-        margin: 32px 0;
+      .cta {
+        margin-top: 32px;
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
       }
-      .card {
-        background: var(--panel);
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14.5px;
+        font-weight: 600;
+        padding: 11px 22px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        transition: 0.15s;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background: var(--surface-2);
+        border-color: var(--border-strong);
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+      .btn.primary:hover {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+      }
+      .hero-note {
+        margin-top: 16px;
+        font-size: 12.5px;
+        color: var(--text-faint);
+      }
+
+      /* mock terminal */
+      .mock {
+        margin: 56px auto 0;
+        max-width: 620px;
+        background: var(--surface-2);
         border: 1px solid var(--border);
         border-radius: 14px;
-        padding: 16px 18px;
+        overflow: hidden;
+        text-align: left;
+        box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.8);
       }
-      .card h3 {
+      .mock-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--border-strong);
+      }
+      .mock-title {
+        margin-left: 8px;
+        font-size: 12px;
+        color: var(--text-faint);
+        font-family: var(--mono);
+      }
+      .mock-body {
+        padding: 16px 18px;
+        font-family: var(--mono);
+        font-size: 12.5px;
+        line-height: 1.9;
+      }
+      .mock-body .m-get {
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .mock-body .m-500 {
+        color: var(--danger);
+        font-weight: 700;
+      }
+      .mock-body .m-url {
+        color: var(--text-dim);
+        word-break: break-all;
+      }
+      .mock-body .m-link {
+        color: var(--accent);
+        word-break: break-all;
+      }
+
+      /* sections */
+      section {
+        padding: 64px 0;
+        border-top: 1px solid var(--border);
+      }
+      .section-head {
+        max-width: 640px;
+        margin-bottom: 40px;
+      }
+      .kicker {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 10px;
+      }
+      h2 {
+        font-size: clamp(24px, 3.4vw, 34px);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+      }
+      .section-head p {
+        margin-top: 14px;
+        color: var(--text-dim);
+        font-size: 16px;
+      }
+
+      /* why: two columns */
+      .why {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 22px 24px;
+      }
+      .panel h3 {
         font-size: 15px;
-        margin-bottom: 6px;
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
         gap: 8px;
       }
-      .card p {
-        font-size: 13.5px;
-        color: var(--muted);
+      .panel h3 .tag {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
       }
-      .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--brand);
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+      .panel.before h3 .tag {
+        color: var(--danger);
+        background: rgba(229, 72, 77, 0.12);
       }
-      .card:nth-child(2) .dot {
-        background: #f59e0b;
-        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.18);
+      .panel.after h3 .tag {
+        color: var(--accent);
+        background: var(--accent-soft);
       }
-      .card:nth-child(3) .dot {
-        background: #10b981;
-        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+      .panel ul {
+        list-style: none;
+        color: var(--text-dim);
+        font-size: 14px;
       }
-      .note {
-        background: var(--panel);
+      .panel li {
+        padding: 6px 0 6px 20px;
+        position: relative;
+      }
+      .panel li::before {
+        content: '–';
+        position: absolute;
+        left: 0;
+        color: var(--text-faint);
+      }
+      @media (max-width: 720px) {
+        .why {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* features */
+      .features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .feature {
+        background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 14px;
-        padding: 16px 18px;
+        padding: 20px;
+      }
+      .feature .ico {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 17px;
+        margin-bottom: 14px;
+      }
+      .feature h3 {
+        font-size: 15px;
+        margin-bottom: 6px;
+      }
+      .feature p {
         font-size: 13.5px;
-        color: var(--muted);
+        color: var(--text-dim);
       }
-      .note strong {
-        color: var(--text);
+      @media (max-width: 900px) {
+        .features {
+          grid-template-columns: 1fr 1fr;
+        }
       }
-      code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 12.5px;
-        color: #c7d2fe;
-        background: rgba(99, 102, 241, 0.12);
-        border: 1px solid rgba(99, 102, 241, 0.25);
-        padding: 2px 7px;
-        border-radius: 6px;
-        word-break: break-all;
+      @media (max-width: 620px) {
+        .features {
+          grid-template-columns: 1fr;
+        }
       }
+
+      /* steps */
+      .steps {
+        display: grid;
+        gap: 12px;
+        counter-reset: step;
+      }
+      .step {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+      }
+      .step .num {
+        flex: none;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 700;
+        font-size: 13px;
+        display: grid;
+        place-items: center;
+      }
+      .step .body strong {
+        display: block;
+        font-size: 14.5px;
+        margin-bottom: 3px;
+      }
+      .step .body span {
+        font-size: 13.5px;
+        color: var(--text-dim);
+      }
+      .step code {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 1px 6px;
+        color: var(--accent);
+      }
+
+      /* download */
+      .download {
+        text-align: center;
+      }
+      .download .btn {
+        font-size: 16px;
+        padding: 14px 28px;
+      }
+      .download .links {
+        margin-top: 18px;
+        font-size: 13.5px;
+        color: var(--text-faint);
+        display: flex;
+        gap: 18px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .download .links a {
+        color: var(--text-dim);
+      }
+      .download .links a:hover {
+        color: var(--accent);
+      }
+
       footer {
-        margin-top: 28px;
+        border-top: 1px solid var(--border);
+        padding: 28px 0 48px;
+        font-size: 13px;
+        color: var(--text-faint);
         display: flex;
         gap: 16px;
         flex-wrap: wrap;
-        font-size: 13px;
-        color: var(--muted);
+        align-items: center;
       }
-      a {
-        color: #93c5fd;
-        text-decoration: none;
+      footer .spacer {
+        flex: 1;
       }
-      a:hover {
-        text-decoration: underline;
+      footer a:hover {
+        color: var(--accent);
+      }
+
+      /* ---------- 移动端适配 ---------- */
+      @media (max-width: 720px) {
+        .wrap {
+          padding: 0 18px;
+        }
+        .nav-inner {
+          padding: 10px 18px;
+        }
+        .nav-links a {
+          padding: 6px 10px;
+        }
+        .hero {
+          padding: 56px 0 40px;
+        }
+        section {
+          padding: 48px 0;
+        }
+        .section-head {
+          margin-bottom: 28px;
+        }
+        .cta {
+          flex-direction: column;
+        }
+        .cta .btn {
+          width: 100%;
+          justify-content: center;
+        }
+        .mock {
+          margin-top: 40px;
+        }
+        .mock-body {
+          font-size: 12px;
+          padding: 14px;
+        }
+        .panel {
+          padding: 18px;
+        }
+        .step {
+          padding: 14px;
+          gap: 12px;
+        }
+        .download .btn {
+          width: 100%;
+          justify-content: center;
+        }
+        .download .links {
+          flex-direction: column;
+          gap: 10px;
+        }
+        footer {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 24px 0 40px;
+        }
+        footer .spacer {
+          display: none;
+        }
+      }
+      @media (max-width: 460px) {
+        h1 {
+          letter-spacing: -0.02em;
+        }
+        .hero-note {
+          font-size: 12px;
+        }
+        .brand span {
+          font-size: 14px;
+        }
       }
     </style>
   </head>
   <body>
-    <main class="wrap">
-      <span class="badge">● Chrome 扩展 · 前后端联调</span>
-      <h1>SnapRequest</h1>
-      <p class="lead">
-        联调时接口报错，不用再靠截图和口述。SnapRequest 自动捕获失败请求，一键生成分享链接，
-        后端打开即可用原始认证信息重放，并把「已解决 / 仍报错」实时回传给你。
-      </p>
-
-      <div class="grid">
-        <div class="card">
-          <h3><span class="dot"></span>自动捕获</h3>
-          <p>后台静默记录失败的接口请求，保留最近 2 分钟，可按 URL、方法、状态码过滤。</p>
-        </div>
-        <div class="card">
-          <h3><span class="dot"></span>一键分享</h3>
-          <p>生成短链接，认证信息加密存储，可设置有效期与最大访问次数，随时撤销。</p>
-        </div>
-        <div class="card">
-          <h3><span class="dot"></span>重放与闭环</h3>
-          <p>后端对比原始响应与重放响应，标记处理结果，前端侧边栏实时同步状态。</p>
+    <nav>
+      <div class="nav-inner">
+        <a class="brand" href="/">
+          <img src="share-page/logo.svg" alt="SnapRequest" />
+          <span>SnapRequest</span>
+        </a>
+        <div class="nav-links">
+          <a class="opt" href="#why">为什么</a>
+          <a class="opt" href="#features">功能</a>
+          <a class="opt" href="#usage">使用</a>
+          <a href="#download">下载</a>
+          <a href="https://github.com/chow5566/snaprequest" target="_blank" rel="noopener">GitHub</a>
         </div>
       </div>
+    </nav>
 
-      <div class="note">
+    <header class="hero wrap">
+      <span class="eyebrow">● 开源 · 免费 · Chrome / Edge 扩展</span>
+      <h1>联调报错，<span class="accent">别再靠截图</span>。</h1>
+      <p class="sub">
+        SnapRequest 自动捕获失败的接口请求，一键生成分享链接。后端打开即可用原始认证信息重放，
+        并把处理结果实时回传给你。
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="downloads/snaprequest-0.1.0-chrome.zip" download>⬇ 下载扩展</a>
+        <a class="btn" href="https://github.com/chow5566/snaprequest" target="_blank" rel="noopener"
+          >查看源码</a
+        >
+      </div>
+      <p class="hero-note">适用于 Chrome / Edge（Manifest V3）</p>
+
+      <div class="mock">
+        <div class="mock-bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="mock-title">SnapRequest · 侧边栏</span>
+        </div>
+        <div class="mock-body">
+          <div><span class="m-get">POST</span> <span class="m-500">500</span> <span class="m-url">/api/order/create</span> · 185ms</div>
+          <div class="m-link">→ https://www.snaperequest.online/share-page/snapshot.html?id=9f2c…</div>
+          <div class="m-url">后端已重放 · 状态：已解决 ✅</div>
+        </div>
+      </div>
+    </header>
+
+    <section id="why" class="wrap">
+      <div class="section-head">
+        <div class="kicker">为什么做这个</div>
+        <h2>把「失败的那一次请求」，完整地交给后端。</h2>
         <p>
-          <strong>这是一个分享页站点。</strong> 别人发给你的接口快照链接形如：
-          <code>https://www.snaperequest.online/share-page/snapshot.html?id=xxxxxxxx</code>
-          ，打开后可以查看请求详情、一键重放并标记状态。
+          联调时接口报错，往往靠截图或口述。请求头、参数、认证信息、响应体在传递中大量丢失，
+          后端难以复现，只能反复来回问。SnapRequest 解决的就是这段沟通成本。
         </p>
       </div>
+      <div class="why">
+        <div class="panel before">
+          <h3><span class="tag">以前</span></h3>
+          <ul>
+            <li>截图/复制一段，关键信息丢失</li>
+            <li>认证信息（Cookie / Token）说不清，后端无法复现</li>
+            <li>「你那边好了吗？」——没有回执</li>
+            <li>反复沟通，效率低</li>
+          </ul>
+        </div>
+        <div class="panel after">
+          <h3><span class="tag">用 SnapRequest</span></h3>
+          <ul>
+            <li>一条链接带走完整请求 + 响应</li>
+            <li>认证信息加密随链接传递，后端一键重放</li>
+            <li>后端标记「已解决 / 仍报错」，你这边实时可见</li>
+            <li>一次说清，闭环处理</li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
-      <footer>
-        <span>© <span id="year"></span> SnapRequest</span>
+    <section id="features" class="wrap">
+      <div class="section-head">
+        <div class="kicker">核心能力</div>
+        <h2>为联调而生的六个能力</h2>
+      </div>
+      <div class="features">
+        <div class="feature">
+          <div class="ico">⚡</div>
+          <h3>双通道捕获</h3>
+          <p>后台静默记录失败请求；也可在 DevTools 的 SnapRequest 面板里主动挑选、右键分享。</p>
+        </div>
+        <div class="feature">
+          <div class="ico">🎯</div>
+          <h3>精准过滤</h3>
+          <p>按 URL、方法、状态码、资源类型过滤，只保留有用的请求，避免噪音。</p>
+        </div>
+        <div class="feature">
+          <div class="ico">🔗</div>
+          <h3>一键分享</h3>
+          <p>生成短链接，可设置有效期与最大访问次数，链接随时可撤销。</p>
+        </div>
+        <div class="feature">
+          <div class="ico">🔒</div>
+          <h3>认证信息加密</h3>
+          <p>Cookie / Token 以 AES-GCM 加密存储，页面不展示明文，仅重放时在服务端解密。</p>
+        </div>
+        <div class="feature">
+          <div class="ico">🔁</div>
+          <h3>一键重放</h3>
+          <p>后端用原始认证信息重发请求，自动并排对比「原始响应 / 重放响应」并给出判断提示。</p>
+        </div>
+        <div class="feature">
+          <div class="ico">✅</div>
+          <h3>状态闭环</h3>
+          <p>后端标记处理结果并留备注，状态实时同步回扩展侧边栏。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="usage" class="wrap">
+      <div class="section-head">
+        <div class="kicker">怎么使用</div>
+        <h2>六步跑通闭环</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="num">1</span>
+          <div class="body">
+            <strong>下载并解压扩展</strong>
+            <span>点下方「下载扩展」得到 zip，解压到任意目录。</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">2</span>
+          <div class="body">
+            <strong>加载到浏览器</strong>
+            <span
+              >打开 <code>chrome://extensions</code> → 右上角开启「开发者模式」→
+              「加载已解压的扩展程序」→ 选择解压后的文件夹。</span
+            >
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">3</span>
+          <div class="body">
+            <strong>触发一次失败请求</strong>
+            <span>在页面上操作，让接口报 4xx/5xx；或打开 DevTools 的 SnapRequest 面板主动挑选。</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">4</span>
+          <div class="body">
+            <strong>分享给后端</strong>
+            <span>点扩展图标打开侧边栏 → 选中请求 → 「分享给后端」，链接自动复制。</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">5</span>
+          <div class="body">
+            <strong>后端查看并重放</strong>
+            <span>打开链接查看请求详情 → 点「重放」对比响应 → 标记「已解决 / 仍报错 / 需更多信息」。</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">6</span>
+          <div class="body">
+            <strong>你实时收到结果</strong>
+            <span>侧边栏「最近分享」的状态会自动更新，闭环完成。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="download" class="wrap download">
+      <div class="kicker">下载</div>
+      <h2>现在就装上试试</h2>
+      <p class="sub" style="margin: 14px auto 26px">
+        完全开源，代码与分享页都在 GitHub。扩展数据托管在你自己的 Supabase，不经过第三方。
+      </p>
+      <a class="btn primary" href="downloads/snaprequest-0.1.0-chrome.zip" download
+        >⬇ 下载扩展（v0.1.0）</a
+      >
+      <div class="links">
         <a href="https://github.com/chow5566/snaprequest" target="_blank" rel="noopener">GitHub 仓库</a>
-      </footer>
-    </main>
+        <a href="https://github.com/chow5566/snaprequest/tree/main/share-page" target="_blank" rel="noopener"
+          >分享页源码</a
+        >
+      </div>
+    </section>
+
+    <footer class="wrap">
+      <span>© <span id="year"></span> SnapRequest · 开源项目</span>
+      <span class="spacer"></span>
+      <a href="https://github.com/chow5566/snaprequest" target="_blank" rel="noopener">GitHub</a>
+    </footer>
 
     <script>
       document.getElementById('year').textContent = new Date().getFullYear();
